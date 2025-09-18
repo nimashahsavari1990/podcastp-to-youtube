@@ -1,0 +1,4 @@
+feedparser
+requests
+google-api-python-client
+google-auth-oauthlib
