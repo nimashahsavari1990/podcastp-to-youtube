@@ -36,6 +36,13 @@ subprocess.run([
 
 # آپلود به YouTube
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+import json
+
+# گرفتن فایل از Secret
+client_secret_raw = os.environ.get("CLIENT_SECRET_JSON")
+with open("client_secret.json", "w") as f:
+    f.write(client_secret_raw)
+
 flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
 credentials = flow.run_console()
 youtube = build("youtube", "v3", credentials=credentials)
