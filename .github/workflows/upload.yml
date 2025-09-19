@@ -24,7 +24,7 @@ jobs:
       - name: نصب کتابخانه‌ها
         run: |
           pip install --upgrade pip
-          pip install --upgrade moviepy imageio imageio-ffmpeg numpy pillow decorator proglog feedparser google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+          pip install moviepy==1.0.3 imageio imageio-ffmpeg numpy pillow decorator proglog feedparser google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
       - name: اجرای اسکریپت
         env:
