@@ -24,7 +24,10 @@ if len(items) < 2:
 episode = items[1]  # اپیزود یکی‌مونده‌آخر
 
 title = episode.title.strip()[:100]
-description = "این یک تست آپلود پادکست است. توضیحات واقعی بعداً جایگزین می‌شود."
+description = episode.description.strip()[:4000]
+description = description.replace('\n', ' ').replace('\r', ' ')
+description = re.sub(r'[<>|\'\"\\]', '', description)
+
 
 
 audio_url = episode.enclosures[0].href
@@ -85,4 +88,5 @@ os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
 os.remove(OUTPUT_VIDEO)
+
 
