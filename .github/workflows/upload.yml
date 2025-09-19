@@ -1,4 +1,3 @@
-python upload_from_rss.py
 name: Upload Podcast Episode
 
 on:
@@ -7,6 +6,7 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -25,4 +25,4 @@ jobs:
           YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
         run: |
           echo "$YOUTUBE_TOKEN_JSON" > token.json
-          python scripts/upload_from_rss.py
+          python upload_from_rss.py
