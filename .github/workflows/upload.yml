@@ -1,3 +1,4 @@
+python upload_from_rss.py
 name: Upload Podcast Episode
 
 on:
