@@ -11,7 +11,7 @@ jobs:
       - name: دریافت فایل‌ها از مخزن
         uses: actions/checkout@v3
 
-      - name: نصب ابزار ffmpeg
+      - name: نصب ffmpeg
         run: |
           sudo apt update
           sudo apt install -y ffmpeg
@@ -21,12 +21,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: نصب کتابخانه‌های لازم
+      - name: نصب کتابخانه‌ها
         run: |
           pip install --upgrade pip
           pip install --upgrade moviepy imageio imageio-ffmpeg numpy pillow decorator proglog feedparser google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
-      - name: اجرای فایل آپلود
+      - name: اجرای اسکریپت
         env:
           YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
         run: |
