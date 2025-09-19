@@ -11,12 +11,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           pip install feedparser moviepy google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
