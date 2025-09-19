@@ -24,9 +24,21 @@ if len(items) < 2:
 episode = items[1]  # اپیزود یکی‌مونده‌آخر
 
 title = episode.title.strip()[:100]
-description = episode.description.strip()[:4000]
-description = description.replace('\n', ' ').replace('\r', ' ')
+import re
+from bs4 import BeautifulSoup
+
+# گرفتن توضیح خام از RSS
+raw_description = episode.description
+
+# حذف تگ‌های HTML
+soup = BeautifulSoup(raw_description, "html.parser")
+clean_text = soup.get_text(separator=' ', strip=True)
+
+# حذف کاراکترهای ممنوعه و محدود کردن طول
+description = clean_text.replace('\n', ' ').replace('\r', ' ')
 description = re.sub(r'[<>|\'\"\\]', '', description)
+description = description[:4000]
+
 
 
 
@@ -89,6 +101,7 @@ os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
 os.remove(OUTPUT_VIDEO)
+
 
 
 
