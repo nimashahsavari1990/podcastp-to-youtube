@@ -72,7 +72,8 @@ body = {
         "categoryId": "22"
     },
     "status": {
-        "privacyStatus": "unlisted"
+        "privacyStatus": "public"
+
     }
 }
 
@@ -88,5 +89,6 @@ os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
 os.remove(OUTPUT_VIDEO)
+
 
 
