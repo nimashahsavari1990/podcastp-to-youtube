@@ -1,6 +1,7 @@
 import feedparser
 import requests
 import os
+import re
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaFileUpload
@@ -22,8 +23,11 @@ if len(items) < 2:
 
 episode = items[1]  # اپیزود یکی‌مونده‌آخر
 
-title = episode.title
-description = episode.description
+title = episode.title.strip()[:100]
+description = episode.description.strip()[:4000]
+description = description.replace('\n', ' ').replace('\r', ' ')
+description = re.sub(r'[^\x00-\x7F]+', '', description)
+
 audio_url = episode.enclosures[0].href
 
 # --- مرحله ۲: استخراج لینک تصویر ---
@@ -44,7 +48,6 @@ if image_url:
         f.write(img.content)
 else:
     print("⚠️ تصویر کاور پیدا نشد، از تصویر پیش‌فرض استفاده می‌شود")
-    # می‌تونی یه تصویر پیش‌فرض بذاری یا این بخش رو حذف کنی
 
 # --- مرحله ۵: ساخت فایل MP4 ---
 print("🎬 در حال ساخت فایل ویدیویی...")
