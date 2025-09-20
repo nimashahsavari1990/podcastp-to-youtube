@@ -32,6 +32,21 @@ def set_latest_uploaded(title):
     with open(LATEST_FILE, "w") as f:
         f.write(title.strip())
 
+def video_exists_on_youtube(youtube, title):
+    search_response = youtube.search().list(
+        part="snippet",
+        forMine=True,
+        type="video",
+        maxResults=10,
+        q=title
+    ).execute()
+
+    for item in search_response.get("items", []):
+        existing_title = item["snippet"]["title"]
+        if clean_title(existing_title) == clean_title(title):
+            return True
+    return False
+
 # --- مرحله ۱: خواندن RSS ---
 feed = feedparser.parse(RSS_URL)
 items = feed.entries
@@ -39,14 +54,22 @@ items = feed.entries
 if not items:
     raise Exception("هیچ اپیزودی در RSS پیدا نشد")
 
-episode = items[0]  # آخرین قسمت
+episode = items[0]
 title = clean_title(episode.title)
+
+# --- مرحله ۲: اتصال به یوتیوب و بررسی وجود ویدیو ---
+creds = Credentials.from_authorized_user_file(TOKEN_PATH)
+youtube = build("youtube", "v3", credentials=creds)
+
+if video_exists_on_youtube(youtube, title):
+    print("⛔ ویدیویی با این عنوان قبلاً در کانال وجود دارد. آپلود رد شد.")
+    exit(0)
 
 if title == clean_title(get_latest_uploaded()):
     print("⏭️ این قسمت قبلاً آپلود شده. رد شد.")
     exit(0)
 
-# --- مرحله ۲: آماده‌سازی توضیحات ---
+# --- مرحله ۳: آماده‌سازی توضیحات ---
 raw_description = episode.description
 soup = BeautifulSoup(raw_description, "html.parser")
 
@@ -60,14 +83,14 @@ description = clean_text.replace('\r', '').strip()
 description = re.sub(r'[<>|\'\"\\]', '', description)
 description = description[:4000]
 
-# --- مرحله ۳: دانلود فایل صوتی ---
+# --- مرحله ۴: دانلود فایل صوتی ---
 print("⬇️ در حال دانلود فایل صوتی...")
 audio_url = episode.enclosures[0].href
 audio = requests.get(audio_url)
 with open(TEMP_AUDIO, "wb") as f:
     f.write(audio.content)
 
-# --- مرحله ۴: دانلود تصویر کاور ---
+# --- مرحله ۵: دانلود تصویر کاور ---
 raw_image = episode.get("image", feed.feed.get("image", {}))
 image_url = raw_image["href"] if isinstance(raw_image, dict) and "href" in raw_image else None
 
@@ -79,7 +102,7 @@ if image_url:
 else:
     print("⚠️ تصویر کاور پیدا نشد، از تصویر پیش‌فرض استفاده می‌شود")
 
-# --- مرحله ۵: ساخت فایل MP4 ---
+# --- مرحله ۶: ساخت فایل MP4 ---
 print("🎬 در حال ساخت فایل ویدیویی...")
 audioclip = AudioFileClip(TEMP_AUDIO)
 imageclip = ImageClip(TEMP_IMAGE if os.path.exists(TEMP_IMAGE) else "default.jpg")
@@ -87,11 +110,8 @@ imageclip = imageclip.set_duration(audioclip.duration).resize(height=720)
 videoclip = imageclip.set_audio(audioclip)
 videoclip.write_videofile(OUTPUT_VIDEO, fps=24)
 
-# --- مرحله ۶: آپلود به یوتیوب ---
+# --- مرحله ۷: آپلود به یوتیوب ---
 print("📤 در حال آپلود به یوتیوب...")
-creds = Credentials.from_authorized_user_file(TOKEN_PATH)
-youtube = build("youtube", "v3", credentials=creds)
-
 body = {
     "snippet": {
         "title": title,
@@ -111,7 +131,7 @@ response = request.execute()
 print("✅ آپلود انجام شد! لینک ویدیو:")
 print(f"https://www.youtube.com/watch?v={response['id']}")
 
-# --- مرحله ۷: ذخیره عنوان و پاک‌سازی ---
+# --- مرحله ۸: ذخیره عنوان و پاک‌سازی ---
 set_latest_uploaded(title)
 os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
