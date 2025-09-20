@@ -16,16 +16,21 @@ TEMP_IMAGE = "thumbnail.jpg"
 OUTPUT_VIDEO = "output.mp4"
 LATEST_FILE = "latest_episode.txt"
 
-# --- بررسی آخرین قسمت آپلود شده ---
+# --- توابع کمکی ---
+def clean_title(raw):
+    raw = raw.strip()
+    raw = re.sub(r'[<>|\'\"\\]', '', raw)
+    return raw[:100]
+
 def get_latest_uploaded():
     if os.path.exists(LATEST_FILE):
         with open(LATEST_FILE, "r") as f:
-            return f.read().strip()
+            return clean_title(f.read())
     return ""
 
 def set_latest_uploaded(title):
     with open(LATEST_FILE, "w") as f:
-        f.write(title.strip())
+        f.write(clean_title(title))
 
 # --- مرحله ۱: خواندن RSS ---
 feed = feedparser.parse(RSS_URL)
@@ -35,10 +40,8 @@ if not items:
     raise Exception("هیچ اپیزودی در RSS پیدا نشد")
 
 episode = items[0]  # آخرین قسمت
+title = clean_title(episode.title)
 
-title = episode.title.strip()
-title = re.sub(r'[<>|\'\"\\]', '', title)
-title = title[:100]
 if title == get_latest_uploaded():
     print("⏭️ این قسمت قبلاً آپلود شده. رد شد.")
     exit(0)
@@ -114,4 +117,3 @@ os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
 os.remove(OUTPUT_VIDEO)
-
