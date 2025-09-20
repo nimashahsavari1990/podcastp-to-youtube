@@ -1,6 +1,8 @@
 name: انتشار خودکار پادکست
 
 on:
+  schedule:
+    - cron: '20 20 * * *'  # هر روز ساعت 23:20 به وقت استانبول
   workflow_dispatch:
 
 
