@@ -25,12 +25,12 @@ def clean_title(raw):
 def get_latest_uploaded():
     if os.path.exists(LATEST_FILE):
         with open(LATEST_FILE, "r") as f:
-            return clean_title(f.read())
+            return f.read().strip()
     return ""
 
 def set_latest_uploaded(title):
     with open(LATEST_FILE, "w") as f:
-        f.write(clean_title(title))
+        f.write(title.strip())
 
 # --- مرحله ۱: خواندن RSS ---
 feed = feedparser.parse(RSS_URL)
@@ -42,7 +42,7 @@ if not items:
 episode = items[0]  # آخرین قسمت
 title = clean_title(episode.title)
 
-if title == get_latest_uploaded():
+if title == clean_title(get_latest_uploaded()):
     print("⏭️ این قسمت قبلاً آپلود شده. رد شد.")
     exit(0)
 
