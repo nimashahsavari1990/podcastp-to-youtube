@@ -1,11 +1,8 @@
 name: انتشار خودکار پادکست
 
 on:
-  schedule:
-    - cron: '0 6 * * *'   # 09:00 استانبول
-    - cron: '0 10 * * *'  # 13:00 استانبول
-    - cron: '0 19 * * *'  # 22:00 استانبول
   workflow_dispatch:
+
 
 jobs:
   upload:
