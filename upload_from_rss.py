@@ -37,6 +37,8 @@ if not items:
 episode = items[0]  # آخرین قسمت
 
 title = episode.title.strip()
+title = re.sub(r'[<>|\'\"\\]', '', title)
+title = title[:100]
 if title == get_latest_uploaded():
     print("⏭️ این قسمت قبلاً آپلود شده. رد شد.")
     exit(0)
@@ -112,3 +114,4 @@ os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
 os.remove(OUTPUT_VIDEO)
+
