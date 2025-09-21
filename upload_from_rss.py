@@ -15,33 +15,34 @@ TOKEN_PATH = "token.json"
 TEMP_AUDIO = "episode.mp3"
 TEMP_IMAGE = "thumbnail.jpg"
 OUTPUT_VIDEO = "output.mp4"
-PUBLISHED_FILE = "published_episodes.json"
+PUBLISHED_FILE = "published_audio_urls.json"
 
-# --- توابع کمکی ---
-def clean_title(raw):
-    raw = raw.strip()
-    raw = re.sub(r'[<>|\'\"\\]', '', raw)
-    return raw[:100]
-
-def is_already_published(title):
+# --- حافظه‌ی مستقل بر اساس لینک فایل صوتی ---
+def is_audio_url_published(url):
     try:
         with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            return title in data.get("published", [])
+            return url in data.get("published", [])
     except FileNotFoundError:
         return False
 
-def add_to_published(title):
+def add_audio_url_to_published(url):
     try:
         with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError:
         data = {"published": []}
 
-    if title not in data["published"]:
-        data["published"].append(title)
+    if url not in data["published"]:
+        data["published"].append(url)
         with open(PUBLISHED_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+
+# --- توابع کمکی ---
+def clean_title(raw):
+    raw = raw.strip()
+    raw = re.sub(r'[<>|\'\"\\]', '', raw)
+    return raw[:100]
 
 def video_exists_on_youtube(youtube, title):
     search_response = youtube.search().list(
@@ -67,10 +68,11 @@ if not items:
 
 episode = items[0]
 title = clean_title(episode.title)
+audio_url = episode.enclosures[0].href
 
 # --- مرحله ۲: بررسی حافظه و یوتیوب ---
-if is_already_published(title):
-    print("⏭️ این قسمت قبلاً در حافظه ثبت شده. رد شد.")
+if is_audio_url_published(audio_url):
+    print("⏭️ این اپیزود قبلاً منتشر شده. رد شد.")
     exit(0)
 
 creds = Credentials.from_authorized_user_file(TOKEN_PATH)
@@ -78,7 +80,7 @@ youtube = build("youtube", "v3", credentials=creds)
 
 if video_exists_on_youtube(youtube, title):
     print("⛔ ویدیویی با این عنوان قبلاً در کانال وجود دارد. آپلود رد شد.")
-    add_to_published(title)
+    add_audio_url_to_published(audio_url)
     exit(0)
 
 # --- مرحله ۳: آماده‌سازی توضیحات ---
@@ -97,7 +99,6 @@ description = description[:4000]
 
 # --- مرحله ۴: دانلود فایل صوتی ---
 print("⬇️ در حال دانلود فایل صوتی...")
-audio_url = episode.enclosures[0].href
 audio = requests.get(audio_url)
 with open(TEMP_AUDIO, "wb") as f:
     f.write(audio.content)
@@ -144,7 +145,7 @@ print("✅ آپلود انجام شد! لینک ویدیو:")
 print(f"https://www.youtube.com/watch?v={response['id']}")
 
 # --- مرحله ۸: ثبت در حافظه و پاک‌سازی ---
-add_to_published(title)
+add_audio_url_to_published(audio_url)
 os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
