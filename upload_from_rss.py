@@ -2,6 +2,7 @@ import feedparser
 import requests
 import os
 import re
+import json
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -14,7 +15,7 @@ TOKEN_PATH = "token.json"
 TEMP_AUDIO = "episode.mp3"
 TEMP_IMAGE = "thumbnail.jpg"
 OUTPUT_VIDEO = "output.mp4"
-LATEST_FILE = "latest_episode.txt"
+PUBLISHED_FILE = "published_episodes.json"
 
 # --- توابع کمکی ---
 def clean_title(raw):
@@ -22,15 +23,25 @@ def clean_title(raw):
     raw = re.sub(r'[<>|\'\"\\]', '', raw)
     return raw[:100]
 
-def get_latest_uploaded():
-    if os.path.exists(LATEST_FILE):
-        with open(LATEST_FILE, "r") as f:
-            return f.read().strip()
-    return ""
+def is_already_published(title):
+    try:
+        with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return title in data.get("published", [])
+    except FileNotFoundError:
+        return False
 
-def set_latest_uploaded(title):
-    with open(LATEST_FILE, "w") as f:
-        f.write(title.strip())
+def add_to_published(title):
+    try:
+        with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {"published": []}
+
+    if title not in data["published"]:
+        data["published"].append(title)
+        with open(PUBLISHED_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
 def video_exists_on_youtube(youtube, title):
     search_response = youtube.search().list(
@@ -57,16 +68,17 @@ if not items:
 episode = items[0]
 title = clean_title(episode.title)
 
-# --- مرحله ۲: اتصال به یوتیوب و بررسی وجود ویدیو ---
+# --- مرحله ۲: بررسی حافظه و یوتیوب ---
+if is_already_published(title):
+    print("⏭️ این قسمت قبلاً در حافظه ثبت شده. رد شد.")
+    exit(0)
+
 creds = Credentials.from_authorized_user_file(TOKEN_PATH)
 youtube = build("youtube", "v3", credentials=creds)
 
 if video_exists_on_youtube(youtube, title):
     print("⛔ ویدیویی با این عنوان قبلاً در کانال وجود دارد. آپلود رد شد.")
-    exit(0)
-
-if title == clean_title(get_latest_uploaded()):
-    print("⏭️ این قسمت قبلاً آپلود شده. رد شد.")
+    add_to_published(title)
     exit(0)
 
 # --- مرحله ۳: آماده‌سازی توضیحات ---
@@ -131,8 +143,8 @@ response = request.execute()
 print("✅ آپلود انجام شد! لینک ویدیو:")
 print(f"https://www.youtube.com/watch?v={response['id']}")
 
-# --- مرحله ۸: ذخیره عنوان و پاک‌سازی ---
-set_latest_uploaded(title)
+# --- مرحله ۸: ثبت در حافظه و پاک‌سازی ---
+add_to_published(title)
 os.remove(TEMP_AUDIO)
 if os.path.exists(TEMP_IMAGE):
     os.remove(TEMP_IMAGE)
