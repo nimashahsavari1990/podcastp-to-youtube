@@ -45,19 +45,28 @@ def clean_title(raw):
     return raw[:100]
 
 def find_video_by_title(youtube, title):
-    response = youtube.videos().list(
-        part="snippet,status",
-        mine=True,
-        maxResults=50
+    search_response = youtube.search().list(
+        part="snippet",
+        forMine=True,
+        type="video",
+        maxResults=10,
+        q=title
     ).execute()
 
-    for item in response.get("items", []):
+    for item in search_response.get("items", []):
         existing_title = item["snippet"]["title"]
         if clean_title(existing_title) == clean_title(title):
-            return {
-                "id": item["id"],
-                "status": item["status"]["privacyStatus"]
-            }
+            video_id = item["id"]["videoId"]
+            video_response = youtube.videos().list(
+                part="status",
+                id=video_id
+            ).execute()
+            items = video_response.get("items", [])
+            if items:
+                return {
+                    "id": video_id,
+                    "status": items[0]["status"]["privacyStatus"]
+                }
     return None
 
 def make_video_public(youtube, video_id):
