@@ -44,30 +44,20 @@ def clean_title(raw):
     raw = re.sub(r'[<>|\'\"\\]', '', raw)
     return raw[:100]
 
-def find_video_on_youtube(youtube, title):
-    search_response = youtube.search().list(
-        part="snippet",
-        forMine=True,
-        type="video",
-        maxResults=10,
-        q=title
+def find_video_by_title(youtube, title):
+    response = youtube.videos().list(
+        part="snippet,status",
+        mine=True,
+        maxResults=50
     ).execute()
 
-    for item in search_response.get("items", []):
+    for item in response.get("items", []):
         existing_title = item["snippet"]["title"]
         if clean_title(existing_title) == clean_title(title):
-            return item["id"]["videoId"]
-    return None
-
-def get_video_privacy_status(youtube, video_id):
-    video_response = youtube.videos().list(
-        part="status",
-        id=video_id
-    ).execute()
-
-    items = video_response.get("items", [])
-    if items:
-        return items[0]["status"]["privacyStatus"]
+            return {
+                "id": item["id"],
+                "status": item["status"]["privacyStatus"]
+            }
     return None
 
 def make_video_public(youtube, video_id):
@@ -101,13 +91,12 @@ if is_audio_url_published(audio_url):
 creds = Credentials.from_authorized_user_file(TOKEN_PATH)
 youtube = build("youtube", "v3", credentials=creds)
 
-video_id = find_video_on_youtube(youtube, title)
+video_info = find_video_by_title(youtube, title)
 
-if video_id:
-    status = get_video_privacy_status(youtube, video_id)
-    if status == "private":
+if video_info:
+    if video_info["status"] == "private":
         print("🔓 ویدیو پیدا شد اما Private است. در حال تبدیل به Public...")
-        make_video_public(youtube, video_id)
+        make_video_public(youtube, video_info["id"])
         add_audio_url_to_published(audio_url)
         print("✅ ویدیو پابلیک شد.")
     else:
