@@ -91,12 +91,7 @@ episode = items[0]
 title = clean_title(episode.title)
 audio_url = episode.enclosures[0].href
 
-# --- مرحله ۲: بررسی حافظه ---
-if is_audio_url_published(audio_url):
-    print("⏭️ این اپیزود قبلاً منتشر شده. رد شد.")
-    exit(0)
-
-# --- مرحله ۳: بررسی یوتیوب ---
+# --- مرحله ۲: بررسی یوتیوب ---
 creds = Credentials.from_authorized_user_file(TOKEN_PATH)
 youtube = build("youtube", "v3", credentials=creds)
 
@@ -108,8 +103,15 @@ if video_info:
         make_video_public(youtube, video_info["id"])
         add_audio_url_to_published(audio_url)
         print("✅ ویدیو پابلیک شد.")
+        exit(0)
     else:
         print("✅ ویدیو قبلاً منتشر شده و پابلیک است. هیچ کاری انجام نمی‌شود.")
+        add_audio_url_to_published(audio_url)
+        exit(0)
+
+# --- مرحله ۳: بررسی حافظه ---
+if is_audio_url_published(audio_url):
+    print("⏭️ این اپیزود قبلاً منتشر شده ولی ویدیوش پیدا نشد. رد شد.")
     exit(0)
 
 # --- مرحله ۴: آماده‌سازی توضیحات ---
