@@ -17,7 +17,6 @@ TEMP_IMAGE = "thumbnail.jpg"
 OUTPUT_VIDEO = "output.mp4"
 PUBLISHED_FILE = "published_audio_urls.json"
 
-# --- حافظه‌ی مستقل بر اساس لینک فایل صوتی ---
 def is_audio_url_published(url):
     try:
         with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
@@ -38,7 +37,6 @@ def add_audio_url_to_published(url):
         with open(PUBLISHED_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-# --- توابع کمکی ---
 def clean_title(raw):
     raw = raw.strip()
     raw = re.sub(r'[<>|\'\"\\]', '', raw)
