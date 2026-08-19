@@ -3,24 +3,26 @@ import re
 import json
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 
-TOKEN_PATH = "token.json"
+def check_and_publish_private_videos():
+    # خواندن توکن از GitHub Secrets
+    token_data = os.environ.get("YOUTUBE_TOKEN_JSON")
+    if not token_data:
+        raise Exception("❌ متغیر YOUTUBE_TOKEN_JSON در Secrets گیت‌هاب پیدا نشد!")
 
-def clean_title(raw):
-    raw = raw.strip()
-    raw = re.sub(r'[<>|\'\"\\]', '', raw)
-    return raw[:100]
+    creds_info = json.loads(token_data)
+    creds = Credentials.from_authorized_user_info(creds_info)
 
-def check_and_publish_private_videos(youtube):
-    print("🔍 در حال بررسی ویدیوهای کانال برای یافتن موارد Private...")
+    # رفرش خودکار توکن اگر منقضی شده باشد
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+
+    youtube = build("youtube", "v3", credentials=creds)
     
-    # گرفتن لیست آخرین ویدیوهای کانال
-    request = youtube.search().list(
-        part="snippet",
-        forMine=True,
-        type="video",
-        maxResults=20
-    )
+    print("🔍 در حال بررسی ویدیوهای کانال...")
+    
+    request = youtube.search().list(part="snippet", forMine=True, type="video", maxResults=20)
     response = request.execute()
 
     count_fixed = 0
@@ -28,38 +30,21 @@ def check_and_publish_private_videos(youtube):
         video_id = item["id"]["videoId"]
         title = item["snippet"]["title"]
 
-        # بررسی وضعیت پابلیک یا پرایوت بودن ویدیو
-        video_response = youtube.videos().list(
-            part="status",
-            id=video_id
-        ).execute()
-        
+        video_response = youtube.videos().list(part="status", id=video_id).execute()
         items_status = video_response.get("items", [])
+        
         if items_status:
             status = items_status[0]["status"]["privacyStatus"]
             if status == "private":
-                print(f"🔓 ویدیوی پرایوت پیدا شد: '{title}' (ID: {video_id}) -> در حال تغییر به Public...")
-                
-                # پابلیک کردن ویدیو
+                print(f"🔓 ویدیوی پرایوت: '{title}' -> در حال پابلیک کردن...")
                 youtube.videos().update(
                     part="status",
-                    body={
-                        "id": video_id,
-                        "status": {
-                            "privacyStatus": "public"
-                        }
-                    }
+                    body={"id": video_id, "status": {"privacyStatus": "public"}}
                 ).execute()
                 count_fixed += 1
-                print("✅ ویدیو با موفقیت پابلیک شد.")
+                print("✅ پابلیک شد.")
 
-    print(f"🎉 بررسی به پایان رسید. تعداد {count_fixed} ویدیوی پرایوت اصلاح و پابلیک شدند.")
+    print(f"🎉 پایان. تعداد {count_fixed} ویدیو پابلیک شدند.")
 
 if __name__ == "__main__":
-    if not os.path.exists(TOKEN_PATH):
-        raise Exception("❌ فایل token.json پیدا نشد!")
-
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH)
-    youtube = build("youtube", "v3", credentials=creds)
-    
-    check_and_publish_private_videos(youtube)
+    check_and_publish_private_videos()
