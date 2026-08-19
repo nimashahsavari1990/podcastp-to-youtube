@@ -7,9 +7,12 @@ from google.auth.transport.requests import Request
 
 def check_and_publish_private_videos():
     # خواندن توکن از GitHub Secrets
-    token_data = os.environ.get("YOUTUBE_TOKEN_JSON")
+  token_data = os.environ.get("YOUTUBE_TOKEN_JSON")
+    print(f"DEBUG: Token data length is: {len(token_data) if token_data else 0}")
+    print(f"DEBUG: First 10 chars: {token_data[:10] if token_data else 'EMPTY'}")
+    
     if not token_data:
-        raise Exception("❌ متغیر YOUTUBE_TOKEN_JSON در Secrets گیت‌هاب پیدا نشد!")
+        raise Exception("❌ متغیر خالی است!")
 
     creds_info = json.loads(token_data)
     creds = Credentials.from_authorized_user_info(creds_info)
