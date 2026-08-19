@@ -34,7 +34,7 @@ def check_and_publish_private_videos():
         part="snippet",
         forMine=True,
         type="video",
-        maxResults=20
+        maxResults=100
     )
     response = request.execute()
 
